@@ -61,6 +61,8 @@ textarea{min-height:92px;resize:vertical;line-height:1.55}
 .done{text-align:center;padding:40px 20px}
 .done .dot{width:72px;height:72px;border-radius:50%;background:var(--pink);margin:0 auto 18px;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:900}
 .err{color:#C0392B;font-size:13px;margin-top:10px;min-height:18px}
+.classLine{display:none;font-size:13px;color:var(--ink-2);margin:0 4px 10px}
+.classLine b{color:var(--ink);font-size:16px;display:block;margin-top:2px;letter-spacing:-.02em}
 footer{text-align:center;color:#999;font-size:12px;margin-top:30px}
 @media (min-width:600px){ .types{grid-template-columns:1fr 1fr} .hero h1{font-size:28px} }
 </style>
@@ -96,9 +98,12 @@ footer{text-align:center;color:#999;font-size:12px;margin-top:30px}
   </section>
 
   <!-- STEP 1 : 점수 문항 -->
+  <section class="step" id="sLoad"><div class="card" style="text-align:center;padding:60px 20px"><p class="muted">수업 정보를 불러오는 중…</p></div></section>
+
   <section class="step" id="s1">
+    <div class="classLine" id="classLine"></div>
     <div class="card" id="qBox"></div>
-    <div class="row"><button class="btn ghost" data-go="0">이전</button><button class="btn" id="next1">다음</button></div>
+    <div class="row"><button class="btn ghost" data-go="0" id="back1">이전</button><button class="btn" id="next1">다음</button></div>
     <div class="err" id="err1"></div>
   </section>
 
@@ -164,22 +169,32 @@ footer{text-align:center;color:#999;font-size:12px;margin-top:30px}
         $('heroOrg').textContent = [r.cls.org, '수업 만족도 설문'].filter(Boolean).join(' · ');
         $('heroTitle').textContent = r.cls.name;
         $('heroDate').textContent = (r.cls.date ? r.cls.date + ' · ' : '') + '1분이면 끝나요.';
-        if (r.cls.type && WORDING[r.cls.type]) { S.type = r.cls.type; }   // 강사가 시트에서 미리 지정한 응답자 유형
-        else showTypes();
+        if (r.cls.type && WORDING[r.cls.type]) {   // 강사가 시트에서 미리 지정한 응답자 유형 → 바로 문항부터
+          S.type = r.cls.type; SKIP = true;
+          $('classLine').innerHTML = (r.cls.org ? r.cls.org + ' · 수업 만족도 설문' : '수업 만족도 설문') + '<b></b>';
+          $('classLine').querySelector('b').textContent = r.cls.name;
+          $('classLine').style.display = 'block';
+          $('back1').style.display = 'none';
+          buildQuestions(); go(1); return;
+        }
+        showTypes(); go(0);
         checkStart();
-      } else { $('heroDate').textContent = '등록되지 않은 수업코드예요. 수업명을 직접 적어 주세요.'; manual(); }
-    }).catch(function(){ $('heroDate').textContent = '1분이면 끝나요.'; manual(); });
+      } else { $('heroDate').textContent = '등록되지 않은 수업코드예요. 수업명을 직접 적어 주세요.'; manual(); go(0); }
+    }).catch(function(){ $('heroDate').textContent = '1분이면 끝나요.'; manual(); go(0); });
   } else if (!S.cls) { manual(); }
 
   /* 단계 이동 */
+  var SKIP = false; // 응답자 유형이 미리 지정되면 첫 화면 생략
   function go(n){
+    $('sLoad').classList.remove('on');
     [0,1,2,3].forEach(function(i){ $('s'+i).classList.toggle('on', i===n); });
-    $('bar').style.width = [8,40,75,100][n] + '%';
-    $('stepLabel').textContent = n<3 ? (n+1)+' / 3' : '';
+    $('bar').style.width = (SKIP ? [0,45,80,100] : [8,40,75,100])[n] + '%';
+    $('stepLabel').textContent = n<3 ? (SKIP ? n+' / 2' : (n+1)+' / 3') : '';
     window.scrollTo({top:0, behavior:'smooth'});
   }
   [].forEach.call(document.querySelectorAll('[data-go]'), function(b){ b.onclick = function(){ go(+b.dataset.go); }; });
-  go(0);
+  if (S.cls && apiReady()) { [0,1,2,3].forEach(function(i){ $('s'+i).classList.remove('on'); }); $('sLoad').classList.add('on'); }
+  else go(0);
 
   $('startBtn').onclick = function(){
     if ($('manualClass').style.display !== 'none') {
