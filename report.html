@@ -125,6 +125,14 @@ table.cmp td.hi{background:var(--pink-soft);font-weight:800}
 /* ---------- 인쇄 / PDF ---------- */
 @page{size:A4;margin:14mm 13mm}
 @media print{
+  body.qrprint .bar,body.qrprint .demo,body.qrprint main{display:none!important}
+  body.qrprint .modal{display:flex!important;position:static;background:none;padding:0;min-height:90vh}
+  body.qrprint .modal .mc{box-shadow:none;max-width:none}
+  body.qrprint .modal img{width:110mm;height:110mm}
+  body.qrprint .modal input,body.qrprint .modal .row{display:none}
+  body.qrprint #qrTitle{font-size:28px!important}
+}
+@media print{
   html,body{background:#fff}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .bar,.demo,.modal,.noprint,.quote .x,.rc .one{display:none!important}
@@ -152,11 +160,11 @@ table.cmp td.hi{background:var(--pink-soft);font-weight:800}
 <main id="root"><div class="paper loading">리포트를 불러오는 중…</div></main>
 
 <div class="modal" id="qrModal"><div class="mc">
-  <b style="font-size:17px">설문 링크 · QR</b>
+  <b style="font-size:17px" id="qrTitle">설문 링크 · QR</b>
   <p style="font-size:13px;color:#777;margin-top:4px">수업 끝에 화면에 띄우거나 인쇄해서 나눠 주세요.</p>
   <img id="qrImg" alt="설문 QR 코드">
   <input id="qrUrl" readonly>
-  <div class="row"><button id="copyBtn">링크 복사</button><button id="openBtn">설문 열기</button><button class="k" id="closeQr">닫기</button></div>
+  <div class="row"><button id="copyBtn">링크 복사</button><button id="printQr">QR 인쇄</button><button id="openBtn">설문 열기</button><button class="k" id="closeQr">닫기</button></div>
 </div></div>
 
 <script src="config.js"></script>
@@ -413,6 +421,13 @@ table.cmp td.hi{background:var(--pink-soft);font-weight:800}
     $('qrUrl').value = url;
     $('qrImg').src = 'https://api.qrserver.com/v1/create-qr-code/?size=480x480&margin=10&data=' + encodeURIComponent(url);
     $('qrModal').classList.add('on');
+  };
+  $('printQr').onclick = function(){
+    $('qrTitle').textContent = (E.title || '수업') + ' 만족도 설문';
+    document.body.classList.add('qrprint');
+    var img = $('qrImg');
+    var go = function(){ window.print(); setTimeout(function(){ document.body.classList.remove('qrprint'); $('qrTitle').textContent = '설문 링크 · QR'; }, 800); };
+    if (img.complete) go(); else img.onload = go;
   };
   $('closeQr').onclick = function(){ $('qrModal').classList.remove('on'); };
   $('openBtn').onclick = function(){ window.open($('qrUrl').value, '_blank'); };
