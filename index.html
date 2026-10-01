@@ -86,7 +86,7 @@ footer{text-align:center;color:#999;font-size:12px;margin-top:30px}
       <label class="f" for="inClassDate">수업일</label>
       <input type="date" id="inClassDate">
     </div>
-    <div class="card">
+    <div class="card" id="typeCard">
       <h2>누가 응답하나요?</h2>
       <p class="muted">해당하는 것을 하나 골라 주세요.</p>
       <div class="types" id="typeBox"></div>
@@ -153,8 +153,10 @@ footer{text-align:center;color:#999;font-size:12px;margin-top:30px}
   }
 
   /* 수업 정보 불러오기 */
-  function manual(){ $('manualClass').style.display = 'block'; checkStart(); }
+  function manual(){ $('manualClass').style.display = 'block'; showTypes(); checkStart(); }
+  function showTypes(){ $('typeCard').style.display = 'block'; }
   if (S.cls && apiReady()) {
+    $('typeCard').style.display = 'none';
     $('heroDate').textContent = '수업 정보를 불러오는 중…';
     jsonp({action:'class', cls:S.cls}).then(function(r){
       if (r && r.ok) {
@@ -162,6 +164,9 @@ footer{text-align:center;color:#999;font-size:12px;margin-top:30px}
         $('heroOrg').textContent = [r.cls.org, '수업 만족도 설문'].filter(Boolean).join(' · ');
         $('heroTitle').textContent = r.cls.name;
         $('heroDate').textContent = (r.cls.date ? r.cls.date + ' · ' : '') + '1분이면 끝나요.';
+        if (r.cls.type && WORDING[r.cls.type]) { S.type = r.cls.type; }   // 강사가 시트에서 미리 지정한 응답자 유형
+        else showTypes();
+        checkStart();
       } else { $('heroDate').textContent = '등록되지 않은 수업코드예요. 수업명을 직접 적어 주세요.'; manual(); }
     }).catch(function(){ $('heroDate').textContent = '1분이면 끝나요.'; manual(); });
   } else if (!S.cls) { manual(); }
