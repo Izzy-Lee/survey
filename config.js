@@ -2,7 +2,7 @@
    아트에이블 수업 만족도 — 공통 설정
    Apps Script 배포 후 받은 웹앱 URL(…/exec)을 아래에 붙여넣으세요.
    ============================================================ */
-const API_URL = 'PASTE_YOUR_APPS_SCRIPT_EXEC_URL';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyn3Hb_9vJc2UbAoQqHkUnjdVezqNl7z64usdGk0rC1072VPf6f6q6jItS1feoNNLg/exec';
 
 const BRAND = {
   name: '아트에이블',
