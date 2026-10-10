@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>강사 메뉴 · 아트에이블</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root{
+  --pink:#F4B8C8; --pink-soft:#FCE9EE; --pink-deep:#E8859F;
+  --ink:#141414; --ink-2:#555; --line:#E7E2E3; --bg:#FFFBFC; --white:#fff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--ink);font-family:Pretendard,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;-webkit-font-smoothing:antialiased}
+body{min-height:100vh;padding:0 16px 80px}
+.wrap{max-width:640px;margin:0 auto}
+header.top{display:flex;align-items:center;justify-content:space-between;padding:18px 0 18px}
+.logo{font-weight:800;letter-spacing:-.02em;font-size:15px}
+.logo span{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--pink);margin-right:6px;vertical-align:1px}
+.card{background:var(--white);border:1px solid var(--line);border-radius:18px;padding:22px 20px;margin-bottom:14px}
+.card h2{font-size:18px;letter-spacing:-.02em;margin-bottom:6px}
+.muted{color:var(--ink-2);font-size:14px;line-height:1.6}
+label.f{display:block;font-size:13px;font-weight:700;margin:16px 0 6px}
+input[type=text],input[type=password]{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;font:inherit;font-size:16px;background:#fff;color:var(--ink)}
+input:focus{outline:none;border-color:var(--ink)}
+.dateBox{border:1.5px dashed var(--line);border-radius:12px;padding:12px 14px;font-size:15px;background:#FAFAFA}
+.dateBox b{font-size:16px}
+.types{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.type{border:1.5px solid var(--line);background:#fff;border-radius:16px;padding:16px 14px;text-align:left;font:inherit;cursor:pointer;transition:.15s}
+.type b{display:block;font-size:15px;margin-bottom:4px}
+.type span{font-size:12.5px;color:var(--ink-2)}
+.type:hover{border-color:var(--pink-deep)}
+.type.on{border-color:var(--ink);background:var(--pink-soft);box-shadow:inset 0 0 0 1px var(--ink)}
+.btn{display:block;width:100%;border:0;border-radius:14px;padding:16px;font:inherit;font-size:16px;font-weight:800;cursor:pointer;background:var(--ink);color:#fff;margin-top:10px;text-align:center;text-decoration:none}
+.btn:disabled{opacity:.35;cursor:default}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line);font-weight:700}
+.row{display:flex;gap:8px}
+.row .btn{flex:1}
+.err{color:#C0392B;font-size:13px;margin-top:10px;min-height:18px}
+.link{word-break:break-all;font-size:13px;background:var(--pink-soft);border-radius:12px;padding:12px 14px;margin-top:10px;line-height:1.5}
+#qr{display:flex;justify-content:center;margin:18px 0 6px}
+#qr img,#qr canvas{width:220px;height:220px}
+.saved{font-size:13px;color:var(--ink-2);margin-top:10px}
+.hide{display:none}
+footer{text-align:center;color:#999;font-size:12px;margin-top:30px}
+footer a{color:#999}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><div class="logo"><span></span>Artable · 강사 메뉴</div><button class="btn ghost hide" id="logout" style="width:auto;padding:8px 14px;margin:0;font-size:13px">잠금</button></header>
+
+  <!-- 비밀번호 -->
+  <section id="lock">
+    <div class="card">
+      <h2>강사 전용</h2>
+      <p class="muted">비밀번호를 입력해 주세요.</p>
+      <label class="f" for="pw">비밀번호</label>
+      <input type="password" id="pw" inputmode="numeric" autocomplete="off">
+      <button class="btn" id="unlock">들어가기</button>
+      <div class="err" id="pwErr"></div>
+    </div>
+  </section>
+
+  <!-- 수업 설정 -->
+  <section id="panel" class="hide">
+    <div class="card">
+      <h2>수업 설정</h2>
+      <p class="muted">여기서 정한 수업명·응답자로 설문이 열리고, 응답자는 문항 화면부터 바로 시작해요.</p>
+
+      <label class="f" for="cName">수업명 *</label>
+      <input type="text" id="cName" maxlength="80" placeholder="예: 수채화 원데이 클래스">
+
+      <label class="f" for="cOrg">기관명 (선택)</label>
+      <input type="text" id="cOrg" maxlength="60" placeholder="예: ○○초등학교">
+
+      <label class="f">수업일</label>
+      <div class="dateBox">자동 · 응답한 날짜로 기록돼요 <span class="muted">(오늘 <b id="today"></b>)</span></div>
+
+      <label class="f">응답자 *</label>
+      <div class="types" id="typeBox"></div>
+
+      <button class="btn" id="make" disabled>설문 링크 만들기</button>
+      <div class="err" id="mkErr"></div>
+    </div>
+
+    <div class="card hide" id="result">
+      <h2>설문 준비 완료</h2>
+      <p class="muted" id="sum"></p>
+      <div id="qr"></div>
+      <div class="link" id="link"></div>
+      <div class="row">
+        <button class="btn ghost" id="copy">링크 복사</button>
+        <a class="btn" id="open" target="_blank" rel="noopener">설문 열기</a>
+      </div>
+      <button class="btn ghost" id="device">이 기기를 이 수업 설문으로 고정</button>
+      <p class="saved" id="savedMsg"></p>
+    </div>
+
+    <div class="card hide" id="current">
+      <h2>이 기기에 고정된 수업</h2>
+      <p class="muted" id="curTxt"></p>
+      <button class="btn ghost" id="clear">고정 해제</button>
+    </div>
+  </section>
+
+  <footer><a href="./">설문 페이지로</a></footer>
+</div>
+
+<script src="config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+(function(){
+  var PASS = '181818';
+  var KEY = 'artable_preset';
+  var $ = function(id){ return document.getElementById(id); };
+  var S = { type:'' };
+
+  function store(fn){ try { return fn(); } catch(e){ return null; } }
+  function today(){ return new Date(Date.now()+9*3600e3).toISOString().slice(0,10); }
+  function typeLabel(id){ var t = TYPES.filter(function(x){ return x.id===id; })[0]; return t ? t.label : id; }
+
+  /* 잠금 */
+  function unlock(){
+    $('lock').classList.add('hide'); $('panel').classList.remove('hide'); $('logout').classList.remove('hide');
+    store(function(){ sessionStorage.setItem('artable_admin', '1'); });
+    showCurrent();
+  }
+  if (store(function(){ return sessionStorage.getItem('artable_admin'); }) === '1') unlock();
+  $('unlock').onclick = function(){
+    if ($('pw').value === PASS) { $('pwErr').textContent = ''; unlock(); }
+    else { $('pwErr').textContent = '비밀번호가 맞지 않아요.'; $('pw').select(); }
+  };
+  $('pw').onkeydown = function(e){ if (e.key === 'Enter') $('unlock').click(); };
+  $('logout').onclick = function(){ store(function(){ sessionStorage.removeItem('artable_admin'); }); location.reload(); };
+
+  /* 폼 */
+  $('today').textContent = today();
+  TYPES.forEach(function(t){
+    var b = document.createElement('button');
+    b.className = 'type'; b.type = 'button';
+    b.innerHTML = '<b>'+t.label+'</b><span>'+t.sub+'</span>';
+    b.onclick = function(){
+      S.type = t.id;
+      [].forEach.call(document.querySelectorAll('.type'), function(x){ x.classList.toggle('on', x===b); });
+      check();
+    };
+    $('typeBox').appendChild(b);
+  });
+  function check(){ $('make').disabled = !($('cName').value.trim() && S.type); }
+  $('cName').oninput = check;
+
+  var cur = null;
+  $('make').onclick = function(){
+    cur = { name:$('cName').value.trim(), org:$('cOrg').value.trim(), type:S.type };
+    var base = location.href.replace(/[?#].*$/, '').replace(/admin\.html$/, '');
+    var q = '?n=' + encodeURIComponent(cur.name) + '&t=' + cur.type + (cur.org ? '&o=' + encodeURIComponent(cur.org) : '');
+    var url = base + q;
+    $('sum').textContent = (cur.org ? cur.org + ' · ' : '') + cur.name + ' · ' + typeLabel(cur.type) + ' · 수업일 자동';
+    $('link').textContent = url;
+    $('open').href = url;
+    $('qr').innerHTML = '';
+    if (window.QRCode) new QRCode($('qr'), { text:url, width:440, height:440, correctLevel:QRCode.CorrectLevel.M });
+    $('savedMsg').textContent = '';
+    $('result').classList.remove('hide');
+    $('result').scrollIntoView({behavior:'smooth', block:'start'});
+  };
+
+  $('copy').onclick = function(){
+    var url = $('link').textContent, btn = this;
+    function ok(){ btn.textContent = '복사됨 ✓'; setTimeout(function(){ btn.textContent = '링크 복사'; }, 1500); }
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(url).then(ok, fallback); else fallback();
+    function fallback(){
+      var ta = document.createElement('textarea'); ta.value = url; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); ok(); } catch(e){} ta.remove();
+    }
+  };
+
+  /* 태블릿 등 한 기기로 여러 명 응답받을 때: 설문 주소만 열어도 이 수업으로 시작 */
+  $('device').onclick = function(){
+    if (!cur) return;
+    var r = store(function(){ localStorage.setItem(KEY, JSON.stringify(cur)); return true; });
+    $('savedMsg').textContent = r ? '이 기기에서는 설문 페이지만 열어도 이 수업으로 바로 시작해요.' : '이 브라우저에서는 저장할 수 없어요. 링크/QR을 사용해 주세요.';
+    showCurrent();
+  };
+  $('clear').onclick = function(){ store(function(){ localStorage.removeItem(KEY); }); showCurrent(); };
+
+  function showCurrent(){
+    var sv = store(function(){ return JSON.parse(localStorage.getItem(KEY) || 'null'); });
+    if (sv && sv.name) {
+      $('curTxt').textContent = (sv.org ? sv.org + ' · ' : '') + sv.name + ' · ' + typeLabel(sv.type);
+      $('current').classList.remove('hide');
+    } else $('current').classList.add('hide');
+  }
+})();
+</script>
+</body>
+</html>

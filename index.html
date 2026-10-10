@@ -124,14 +124,24 @@ footer{text-align:center;color:#999;font-size:12px;margin-top:30px}
     </div>
   </section>
 
-  <footer>아트에이블 · Slow Creative, We Can All Do Art</footer>
+  <footer>아트에이블 · Slow Creative, We Can All Do Art<br><a href="admin.html" style="color:#bbb;text-decoration:none;font-size:11px;display:inline-block;margin-top:8px">강사 메뉴</a></footer>
 </div>
 
 <script src="config.js"></script>
 <script>
 (function(){
   var P = new URLSearchParams(location.search);
-  var S = { cls: (P.get('cls')||'').trim(), className:'', classDate:'', type:'', ans:{} };
+  var S = { cls: (P.get('cls')||'').trim(), className:'', classDate:'', type:'', org:'', ans:{} };
+  function today(){ return new Date(Date.now()+9*3600e3).toISOString().slice(0,10); }
+
+  /* 강사 메뉴(admin.html)에서 정한 수업 — 링크 파라미터(n·t·o) 우선, 없으면 이 기기에 저장된 설정 */
+  var PRESET = null;
+  var SKIP = false; // 응답자 유형이 미리 지정되면 첫 화면 생략
+  if (P.get('n') && WORDING[P.get('t')]) {
+    PRESET = { name:P.get('n').trim(), type:P.get('t'), org:(P.get('o')||'').trim() };
+  } else if (!S.cls) {
+    try { var sv = JSON.parse(localStorage.getItem('artable_preset')||'null'); if (sv && sv.name && WORDING[sv.type]) PRESET = sv; } catch(e){}
+  }
   var $ = function(id){ return document.getElementById(id); };
   var FACES = ['😣','🙁','😐','🙂','😍'];
 
@@ -181,10 +191,18 @@ footer{text-align:center;color:#999;font-size:12px;margin-top:30px}
         checkStart();
       } else { $('heroDate').textContent = '등록되지 않은 수업코드예요. 수업명을 직접 적어 주세요.'; manual(); go(0); }
     }).catch(function(){ $('heroDate').textContent = '1분이면 끝나요.'; manual(); go(0); });
+  } else if (PRESET) {
+    // 수업명·응답자 유형은 강사가 지정, 날짜는 응답일 자동 → 응답자는 문항(2페이지)부터 시작
+    S.className = PRESET.name; S.type = PRESET.type; S.org = PRESET.org || ''; S.classDate = today();
+    SKIP = true;
+    $('classLine').innerHTML = (S.org ? S.org + ' · ' : '') + '수업 만족도 설문 · ' + S.classDate + '<b></b>';
+    $('classLine').querySelector('b').textContent = S.className;
+    $('classLine').style.display = 'block';
+    $('back1').style.display = 'none';
+    buildQuestions();
   } else if (!S.cls) { manual(); }
 
   /* 단계 이동 */
-  var SKIP = false; // 응답자 유형이 미리 지정되면 첫 화면 생략
   function go(n){
     $('sLoad').classList.remove('on');
     [0,1,2,3].forEach(function(i){ $('s'+i).classList.toggle('on', i===n); });
@@ -194,7 +212,7 @@ footer{text-align:center;color:#999;font-size:12px;margin-top:30px}
   }
   [].forEach.call(document.querySelectorAll('[data-go]'), function(b){ b.onclick = function(){ go(+b.dataset.go); }; });
   if (S.cls && apiReady()) { [0,1,2,3].forEach(function(i){ $('s'+i).classList.remove('on'); }); $('sLoad').classList.add('on'); }
-  else go(0);
+  else go(PRESET ? 1 : 0);
 
   $('startBtn').onclick = function(){
     if ($('manualClass').style.display !== 'none') {
@@ -250,7 +268,7 @@ footer{text-align:center;color:#999;font-size:12px;margin-top:30px}
   $('submitBtn').onclick = function(){
     if (sending) return; sending = true;
     var btn = this; btn.disabled = true; btn.textContent = '보내는 중…';
-    var payload = { cls:S.cls, className:S.className, classDate:S.classDate, type:S.type, name:$('in_name').value.trim() };
+    var payload = { cls:S.cls, className:S.className, classDate:S.classDate, type:S.type, org:S.org, name:$('in_name').value.trim() };
     ITEMS.forEach(function(it){ payload[it.key] = S.ans[it.key]; });
     OPENS.forEach(function(it){ payload[it.key] = $('in_'+it.key).value.trim(); });
 
