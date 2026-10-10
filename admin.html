@@ -75,6 +75,10 @@ footer a{color:#999}
       <label class="f" for="cOrg">기관명 (선택)</label>
       <input type="text" id="cOrg" maxlength="60" placeholder="예: ○○초등학교">
 
+      <label class="f" for="cExtra">추가 질문 (선택)</label>
+      <input type="text" id="cExtra" maxlength="120" placeholder="이 수업만의 질문 · 서술형으로 물어봐요">
+      <button type="button" class="btn ghost" id="exDiary" style="margin-top:8px;padding:10px;font-size:14px">＋ 수채화 다이어리 질문 넣기</button>
+
       <label class="f">수업일</label>
       <div class="dateBox">자동 · 응답한 날짜로 기록돼요 <span class="muted">(오늘 <b id="today"></b>)</span></div>
 
@@ -148,16 +152,21 @@ footer a{color:#999}
     };
     $('typeBox').appendChild(b);
   });
+  $('exDiary').onclick = function(){
+    $('cExtra').value = S.type === 'kid'
+      ? '수채화 다이어리 만들기는 어땠어요? 좋았던 점이나 더 하고 싶은 걸 적어 주세요'
+      : '수채화 다이어리 활동은 어떠셨나요? 좋았던 점이나 바라는 점을 적어 주세요';
+  };
   function check(){ $('make').disabled = !($('cName').value.trim() && S.type); }
   $('cName').oninput = check;
 
   var cur = null;
   $('make').onclick = function(){
-    cur = { name:$('cName').value.trim(), org:$('cOrg').value.trim(), type:S.type };
+    cur = { name:$('cName').value.trim(), org:$('cOrg').value.trim(), type:S.type, extra:$('cExtra').value.trim() };
     var base = location.href.replace(/[?#].*$/, '').replace(/admin\.html$/, '');
-    var q = '?n=' + encodeURIComponent(cur.name) + '&t=' + cur.type + (cur.org ? '&o=' + encodeURIComponent(cur.org) : '');
+    var q = '?n=' + encodeURIComponent(cur.name) + '&t=' + cur.type + (cur.org ? '&o=' + encodeURIComponent(cur.org) : '') + (cur.extra ? '&x=' + encodeURIComponent(cur.extra) : '');
     var url = base + q;
-    $('sum').textContent = (cur.org ? cur.org + ' · ' : '') + cur.name + ' · ' + typeLabel(cur.type) + ' · 수업일 자동';
+    $('sum').textContent = (cur.org ? cur.org + ' · ' : '') + cur.name + ' · ' + typeLabel(cur.type) + ' · 수업일 자동' + (cur.extra ? ' · 추가 질문 1개' : '');
     $('link').textContent = url;
     $('open').href = url;
     $('qr').innerHTML = '';

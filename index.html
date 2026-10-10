@@ -131,14 +131,14 @@ footer{text-align:center;color:#999;font-size:12px;margin-top:30px}
 <script>
 (function(){
   var P = new URLSearchParams(location.search);
-  var S = { cls: (P.get('cls')||'').trim(), className:'', classDate:'', type:'', org:'', ans:{} };
+  var S = { cls: (P.get('cls')||'').trim(), className:'', classDate:'', type:'', org:'', extra:'', ans:{} };
   function today(){ return new Date(Date.now()+9*3600e3).toISOString().slice(0,10); }
 
   /* 강사 메뉴(admin.html)에서 정한 수업 — 링크 파라미터(n·t·o) 우선, 없으면 이 기기에 저장된 설정 */
   var PRESET = null;
   var SKIP = false; // 응답자 유형이 미리 지정되면 첫 화면 생략
   if (P.get('n') && WORDING[P.get('t')]) {
-    PRESET = { name:P.get('n').trim(), type:P.get('t'), org:(P.get('o')||'').trim() };
+    PRESET = { name:P.get('n').trim(), type:P.get('t'), org:(P.get('o')||'').trim(), extra:(P.get('x')||'').trim() };
   } else if (!S.cls) {
     try { var sv = JSON.parse(localStorage.getItem('artable_preset')||'null'); if (sv && sv.name && WORDING[sv.type]) PRESET = sv; } catch(e){}
   }
@@ -193,7 +193,7 @@ footer{text-align:center;color:#999;font-size:12px;margin-top:30px}
     }).catch(function(){ $('heroDate').textContent = '1분이면 끝나요.'; manual(); go(0); });
   } else if (PRESET) {
     // 수업명·응답자 유형은 강사가 지정, 날짜는 응답일 자동 → 응답자는 문항(2페이지)부터 시작
-    S.className = PRESET.name; S.type = PRESET.type; S.org = PRESET.org || ''; S.classDate = today();
+    S.className = PRESET.name; S.type = PRESET.type; S.org = PRESET.org || ''; S.extra = PRESET.extra || ''; S.classDate = today();
     SKIP = true;
     $('classLine').innerHTML = (S.org ? S.org + ' · ' : '') + '수업 만족도 설문 · ' + S.classDate + '<b></b>';
     $('classLine').querySelector('b').textContent = S.className;
@@ -245,11 +245,15 @@ footer{text-align:center;color:#999;font-size:12px;margin-top:30px}
       });
     });
     var o = '';
+    if (S.extra) {   // 강사가 정한 추가 질문 (예: 수채화 다이어리)
+      o += '<label class="f" for="in_extra"></label><textarea id="in_extra" maxlength="1500"></textarea>';
+    }
     OPENS.forEach(function(it){
       o += '<label class="f" for="in_'+it.key+'">'+W[it.key]+'</label><textarea id="in_'+it.key+'" maxlength="1500"></textarea>';
     });
     o += '<label class="f" for="in_name">'+W.name+'</label><input type="text" id="in_name" maxlength="50">';
     $('oBox').innerHTML = '<h2>'+(S.type==='kid'?'하고 싶은 이야기':'자유롭게 들려주세요')+'</h2><p class="muted">'+(S.type==='kid'?'쓰고 싶은 것만 써도 괜찮아요.':'모든 항목은 선택이에요.')+'</p>' + o;
+    if (S.extra) $('oBox').querySelector('label[for=in_extra]').textContent = S.extra;
   }
 
   $('next1').onclick = function(){
@@ -271,6 +275,12 @@ footer{text-align:center;color:#999;font-size:12px;margin-top:30px}
     var payload = { cls:S.cls, className:S.className, classDate:S.classDate, type:S.type, org:S.org, name:$('in_name').value.trim() };
     ITEMS.forEach(function(it){ payload[it.key] = S.ans[it.key]; });
     OPENS.forEach(function(it){ payload[it.key] = $('in_'+it.key).value.trim(); });
+    if (S.extra) {
+      var ex = $('in_extra').value.trim();
+      payload.extraQ = S.extra; payload.extraA = ex;
+      // 시트에 별도 칸이 없어도 남도록 '기타 의견'(o3) 칸에 함께 기록
+      if (ex) payload.o3 = '[' + S.extra + '] ' + ex + (payload.o3 ? '\n\n' + payload.o3 : '');
+    }
 
     var p = apiReady() ? postData(payload) : new Promise(function(r){ setTimeout(r, 600); });
     p.then(function(){
